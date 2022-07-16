@@ -6,7 +6,17 @@ game = Game(players=players)
 
 print(len(game.deck))
 game.shuffle_deck()
-game.deal_cards(players)
+game.deal_cards()
+
+[print(p.cards) for p in players]
+print(len(game.deck))
+
+game.deal_cards()
+
+[print(p.cards) for p in players]
+print(len(game.deck))
+
+game.deal_cards()
 
 [print(p.cards) for p in players]
 print(len(game.deck))

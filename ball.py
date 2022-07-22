@@ -39,3 +39,9 @@ class Ball:
                 self.state = States.JAILED
             case _:
                 self.state = States.ACTIVE
+    
+    def can_jailbreak(self)->bool:
+        if self.state == States.JAILED:
+            return True
+        else:
+            return False

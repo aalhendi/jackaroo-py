@@ -1,6 +1,4 @@
-from typing import Dict, List
 from ball import Ball
-import numpy as np
 import numpy as np
 
 class Player():
@@ -10,7 +8,7 @@ class Player():
         self.hand = np.array([], dtype=np.int8)
         self.intents = []
         self.intents_map = dict()
-        
+
     # def __repr__(self) -> str:
     #     p_dict = self.__dict__
     #     myballs =  [ball.__repr__ for ball in self.balls]
@@ -24,23 +22,32 @@ class Player():
         all_intents = []
         for card in self.hand:
             intents = [f'MOVE={card}']
-            match card:
-                case 1:
-                    intents = [f'MOVE=1', f'MOVE=11', f'JAILBREAK']
-                case 4:
-                    intents = [f'MOVE={-card}']
-                case 10:
-                    intents.append(f'BURN')
-                case 11:
-                    intents = [f'SWAP']
-                case 13:
-                    intents.append(f'JAILBREAK')
+            if card == 1:
+                intents = [f'MOVE=1', f'MOVE=11', f'JAILBREAK']
+            elif card == 4:
+                intents = [f'MOVE={-card}']
+            elif card == 10:
+                intents.append(f'BURN')
+            elif card == 11:
+                intents = [f'SWAP']
+            elif card == 13:
+                intents.append(f'JAILBREAK')
 
             all_intents.append(intents)
         self.intents = all_intents
 
-    def map_intents(self) -> Dict[int, List[str]]:
+    def map_intents(self) -> None:
         intents_map = dict()
-        for idx, card in enumerate(self.hand):
+        for idx, _ in enumerate(self.hand):
             intents_map.update({idx : self.intents[idx]})
         self.intents_map = intents_map
+
+    def burn(self) -> int:
+        #TODO: skip next guys turn. Could be a game method that checks hand lengths in can_play_turn()
+        #TODO: add burned card to stack
+        np.random.shuffle(self.hand)
+        burned = self.hand[0]
+        self.hand = self.hand[1:]
+        return burned
+
+

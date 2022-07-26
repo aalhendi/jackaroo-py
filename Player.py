@@ -2,7 +2,7 @@ from ast import literal_eval
 from logging import warning
 import random
 from typing import List
-from ball import Ball, States
+from ball import Ball
 import numpy as np
 
 from board import Board
@@ -93,7 +93,7 @@ class Player():
     def play_turn(self, board:Board):
         if 'MOVE' in self.current_intent:
             #HANDLE MOVE
-            parts = self.current_intent.split(" ")
+            parts = self.current_intent.split(" ", 3)
             ball_idx = int(parts[2].split("=")[-1])
             path = literal_eval(parts[3].split("=")[-1])
             card_idx = int(parts[1].split("=")[-1])
@@ -115,15 +115,20 @@ class Player():
             pass
 
         elif 'SWAP' in self.current_intent:
-            #HANDLE SWAP
-            card_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
-            warning("Not implemented SWAP Processing")
-            pass
+            parts = self.current_intent.split(" ")
+            card_idx = int(parts[1].split("=")[-1])
+            b1_idx = int(parts[2].split("=")[-1])
+            b2_pos = int(parts[3].split("=")[-1])
+            b1 = self.balls[b1_idx]
+            b2 = board.query_ball_at_idx(b2_pos)
+            b1.swap(b2, board)
+
         else:
             raise TypeError(f"Unkown intent {self.current_intent}")
 
         self.clear_intent()
-        self.remove_card(card_idx)
+        card = self.remove_card(card_idx)
+        return card
 
     def check_legal_intents(self, board:Board) -> List[List[str]]:
         legal_intents:List[List[str]] = []
@@ -134,7 +139,7 @@ class Player():
                     for ball_idx, ball in enumerate(self.balls):
                         offset = int(i.split(' ')[0].split("=")[-1])
                         path = board.calculate_move_path(ball, offset)
-                        is_legal = self.is_legal_move(ball, path, board)
+                        is_legal = ball.is_legal_move(path, board)
                         if is_legal:
                             legal_intent_list.append(i+ f" ball_idx={ball_idx} path={path}")
 
@@ -148,8 +153,10 @@ class Player():
                         legal_intent_list.append(i)
 
                 elif 'SWAP' in i:
-                    #HANDLE SWAP
-                    pass
+                    for ball_idx, ball in enumerate(self.balls):
+                        swappable = ball.can_swap(board)
+                        for b in swappable:
+                            legal_intent_list.append(i+ f" ball_idx={ball_idx} target_ball_pos={b.position}")
 
                 else:
                     raise TypeError(f"Unkown intent {i}")
@@ -157,34 +164,3 @@ class Player():
         
         self.intents = legal_intents
     
-    def is_legal_move(self, ball:Ball, path:List[int], board:Board)-> bool:
-        obstacles:List[Ball] = []
-        if ball.state == States.JAILED:
-            return False
-
-        if not path:
-            raise LookupError("No path to traverse")
-
-        #TODO: Handle victory legal moves
-
-        for i in path:
-            if board.is_occupied(i):
-                obstacles.append(board.query_ball_at_idx(i))
-
-        if obstacles:
-            problem_idx = 99 #NOTE: Just a default so static code checkers dont get mad
-            for obstacle_idx, obstacle in enumerate(obstacles):
-                if obstacle_idx == 0:
-                    problem_idx = obstacle.position+1
-                else:
-                    if problem_idx > board.len:
-                        problem_idx = 0
-                    if obstacle.position == problem_idx: #TODO: Handle king?
-                        warning("\nIllegal MOVE\n")
-                        return False
-
-                if obstacle.position == obstacle.base_idx:
-                    warning("This path is obstructed")
-                    return False #Illegal move. Obstacle in its base and you cannot overtake it
-
-        return True

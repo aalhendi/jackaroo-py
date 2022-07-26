@@ -1,10 +1,11 @@
+from copy import deepcopy
 from typing import List
 import numpy as np
 import numpy.typing as npt
-
 from ball import Ball
 
 class Board():
+    #TODO: Impl logger / visualizer
     def __init__(self) -> None:
         self.tiles = np.zeros(76, dtype=np.object_) # Board is a 76 element mask with player balls as non-zero ints.
         self.len = len(self.tiles)
@@ -18,14 +19,14 @@ class Board():
             return self.tiles[idx]
 
     def print(self) -> None:
-        tiles = self.tiles
+        tiles = deepcopy(self.tiles)
         for idx, tile in enumerate(tiles):
             if isinstance(tile, Ball):
                 tiles[idx] = tile.owner
         print(*tiles.reshape(4,19), sep='\n')
 
-    def update(self, idx, value) -> None:
-        self.tiles[idx] = value
+    def update(self, idx, ball:Ball) -> None:
+        self.tiles[idx] = ball
 
     def handle_collison(self, idx:int) -> None:
         target_ball = self.query_ball_at_idx(idx)

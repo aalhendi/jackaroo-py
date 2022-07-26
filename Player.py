@@ -27,18 +27,18 @@ class Player():
 
     def get_intents(self):
         all_intents = []
-        for card in self.hand:
-            intents = [f'MOVE={card}']
+        for card_idx, card in enumerate(self.hand):
+            intents = [f'MOVE={card} CARD_IDX={card_idx}']
             if card == 1:
-                intents = [f'MOVE=1', f'MOVE=11', f'JAILBREAK']
+                intents = [f'MOVE=1 CARD_IDX={card_idx}', f'MOVE=11 CARD_IDX={card_idx}', f'JAILBREAK CARD_IDX={card_idx}']
             elif card == 4:
-                intents = [f'MOVE={-card}']
+                intents = [f'MOVE={-card} CARD_IDX={card_idx}']
             elif card == 10:
-                intents.append(f'BURN')
+                intents.append(f'BURN CARD_IDX={card_idx}')
             elif card == 11:
-                intents = [f'SWAP']
+                intents = [f'SWAP CARD_IDX={card_idx}']
             elif card == 13:
-                intents.append(f'JAILBREAK')
+                intents.append(f'JAILBREAK CARD_IDX={card_idx}')
 
             all_intents.append(intents)
         self.intents = all_intents
@@ -51,14 +51,18 @@ class Player():
 
     def burn(self) -> int:
         #TODO: skip next guys turn. Could be a game method that checks hand lengths in can_play_turn()
-        #TODO: add burned card to stack
         np.random.shuffle(self.hand)
         burned = self.hand[0]
         self.hand = self.hand[1:]
         return burned
+    
+    def remove_card(self, idx:int) -> int:
+        hand:List = self.hand.tolist()
+        removed = hand.pop(idx)
+        self.hand = np.array(hand, dtype=np.int8)
+        return removed
 
     def decide_intent(self):
-        # Tuple[int, str] return type
         #TODO: Impl basic set of rules?
         #Flatten intents:
         all_intents = []
@@ -70,8 +74,8 @@ class Player():
         if len(all_intents) == 0:
             #TODO: Order of discards should be considered
             card_idx = random.choice(list(self.intents_map.keys()))
-            self.current_intent = "DISCARD"
-            return card_idx
+            self.current_intent = f"DISCARD CARD_IDX={card_idx}"
+            return
 
         card_idx = random.choice(list(self.intents_map.keys()))
 
@@ -81,40 +85,45 @@ class Player():
 
         self.current_intent = random.choice(self.intents_map[card_idx])
 
-        return card_idx 
-
     def clear_intent(self)->None:
         self.current_intent = ""
+        self.intents = []
+        self.intents_map = dict()
 
-    def process_intent(self, cardIdx:int, board:Board):
+    def play_turn(self, board:Board):
         if 'MOVE' in self.current_intent:
             #HANDLE MOVE
-            ball_idx = int(self.current_intent.split(" ")[1].split("=")[-1])
-            path = literal_eval(self.current_intent.split(" ")[-1].split("=")[-1])
+            parts = self.current_intent.split(" ")
+            ball_idx = int(parts[2].split("=")[-1])
+            path = literal_eval(parts[3].split("=")[-1])
+            card_idx = int(parts[1].split("=")[-1])
             self.balls[ball_idx].move(path, board)
 
         elif 'DISCARD' in self.current_intent:
-            #HANDLE discard
-            warning("Not implemented DISCARD Processing")
-            pass
+            card_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
 
         elif 'JAILBREAK' in self.current_intent:
-            ball_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
+            parts = self.current_intent.split(" ")
+            card_idx = int(parts[1].split("=")[-1])
+            ball_idx = int(parts[-1].split("=")[-1])
             self.balls[ball_idx].jailbreak(board)
 
         elif 'BURN' in self.current_intent:
+            card_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
             warning("Not implemented BURN Processing")
             # burn(next_player_hand)
             pass
 
         elif 'SWAP' in self.current_intent:
             #HANDLE SWAP
+            card_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
             warning("Not implemented SWAP Processing")
             pass
         else:
             raise TypeError(f"Unkown intent {self.current_intent}")
 
         self.clear_intent()
+        self.remove_card(card_idx)
 
     def check_legal_intents(self, board:Board) -> List[List[str]]:
         legal_intents:List[List[str]] = []

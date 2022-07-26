@@ -25,5 +25,4 @@ class Game():
             p.check_legal_intents(self.board)
             p.map_intents()
             p.decide_intent()
-            #process_intent()
-            #reset_intent()
+            #play_turn()

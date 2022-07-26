@@ -46,3 +46,22 @@ class Ball:
             return True
         else:
             return False
+
+    def jailbreak(self, board) -> None:
+        if board.is_occupied(self.base_idx):
+            board.handle_collison(self.base_idx)
+
+        self.upadate_position(self.base_idx)
+        board.update(self.base_idx, self.owner)
+        self.update_state()
+    
+    def move(self, path:List[int], board) -> None:
+        if board.is_occupied(path[-1]):
+            board.handle_collison(path[-1])
+
+        board.update(self.position, 0)
+        self.upadate_position(path[-1])
+        board.update(self.position, self.owner)
+        self.update_state()
+
+    

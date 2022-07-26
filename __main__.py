@@ -8,17 +8,16 @@ game.init_game()
 game.process_hands()
 
 game.board.print()
-for i in [0, 1, 2, 3]:
-    print(game.players[i].balls, game.players[i].hand, game.players[i].intents, game.players[i].intents_map, sep='\n')
+# for i in [0, 1, 2, 3]:
+#     print(game.players[i].balls, game.players[i].hand, 
+#     # game.players[i].intents,
+#     game.players[i].intents_map, sep='\n')
+print(game.players[0].hand, game.players[0].intents_map, game.players[0].current_intent)
 
 
-card_idx, intent = game.decide_intent(game.players[0].intents_map)
+game.players[0].process_intent(0, game.board)
 
-print(card_idx, intent)
-
-game.process_intent(intent, game.players[0].balls)
-
-game.process_hands()
+# game.process_hands()
 game.board.print()
-for i in [0, 1, 2, 3]:
-    print(game.players[i].balls, game.players[i].hand, game.players[i].intents, game.players[i].intents_map, sep='\n')
+# for i in [0, 1, 2, 3]:
+#     print(game.players[i].balls, game.players[i].hand, game.players[i].intents, game.players[i].intents_map, sep='\n')

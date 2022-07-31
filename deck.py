@@ -28,10 +28,3 @@ class Deck:
             hands = np.split(self.cards[:16], 4)
             self.cards = self.cards[16:]
         return hands
-
-# deck = Deck()
-# deck.shuffle()
-# deck.print()
-# [h1, h2, h3, h4] = deck.deal()
-# print(h1)
-# deck.print()

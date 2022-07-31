@@ -12,9 +12,8 @@ class Player():
         self.base_idx = base_idx
         self.balls = [Ball(self.base_idx), Ball(self.base_idx), Ball(self.base_idx), Ball(self.base_idx)]
         self.hand = np.array([], dtype=np.int8)
-        self.intents = []
-        self.intents_map = dict()
-        self.current_intent = ""
+        self.current_action = dict()
+        self.actions = []
 
     # def __repr__(self) -> str:
     #     p_dict = self.__dict__
@@ -24,30 +23,6 @@ class Player():
 
     def update_hand(self, new_hand):
         self.hand = new_hand
-
-    def get_intents(self):
-        all_intents = []
-        for card_idx, card in enumerate(self.hand):
-            intents = [f'MOVE={card} CARD_IDX={card_idx}']
-            if card == 1:
-                intents = [f'MOVE=1 CARD_IDX={card_idx}', f'MOVE=11 CARD_IDX={card_idx}', f'JAILBREAK CARD_IDX={card_idx}']
-            elif card == 4:
-                intents = [f'MOVE={-card} CARD_IDX={card_idx}']
-            elif card == 10:
-                intents.append(f'BURN CARD_IDX={card_idx}')
-            elif card == 11:
-                intents = [f'SWAP CARD_IDX={card_idx}']
-            elif card == 13:
-                intents.append(f'JAILBREAK CARD_IDX={card_idx}')
-
-            all_intents.append(intents)
-        self.intents = all_intents
-
-    def map_intents(self) -> None:
-        intents_map = dict()
-        for idx, _ in enumerate(self.hand):
-            intents_map.update({idx : self.intents[idx]})
-        self.intents_map = intents_map
 
     def burn(self) -> int:
         #TODO: skip next guys turn. Could be a game method that checks hand lengths in can_play_turn()
@@ -61,106 +36,132 @@ class Player():
         removed = hand.pop(idx)
         self.hand = np.array(hand, dtype=np.int8)
         return removed
-
-    def decide_intent(self):
+    
+    def decide_action(self):
         #TODO: Impl basic set of rules?
-        #Flatten intents:
-        all_intents = []
-        for _, intents in self.intents_map.items():
-            for i in intents:
-                all_intents.append(i)
-
         #Check if theres at least one card to be played
-        if len(all_intents) == 0:
-            #TODO: Order of discards should be considered
-            card_idx = random.choice(list(self.intents_map.keys()))
-            self.current_intent = f"DISCARD CARD_IDX={card_idx}"
+        if len(self.actions) == 0:
+            card_idx = random.randrange(len(self.hand))
+            card_value = self.hand[card_idx]
+            action = self.create_action(card_idx, card_value, "DISCARD")
+            self.current_action = action
             return
 
-        card_idx = random.choice(list(self.intents_map.keys()))
+        action = random.choice(self.actions)
+        self.current_action = action
 
-        #Ensures no card idx with 0 intents is selected
-        while len(self.intents_map[card_idx]) == 0:
-            card_idx = random.choice(list(self.intents_map.keys()))
+    def clear_actions(self)->None:
+        self.current_action = dict()
+        self.actions= []
 
-        self.current_intent = random.choice(self.intents_map[card_idx])
-
-    def clear_intent(self)->None:
-        self.current_intent = ""
-        self.intents = []
-        self.intents_map = dict()
-
-    def play_turn(self, board:Board):
-        if 'MOVE' in self.current_intent:
-            #HANDLE MOVE
-            parts = self.current_intent.split(" ", 3)
-            ball_idx = int(parts[2].split("=")[-1])
-            path = literal_eval(parts[3].split("=")[-1])
-            card_idx = int(parts[1].split("=")[-1])
+    def play_action(self, board:Board):
+        verb = self.current_action['verb']
+        if verb == "MOVE":
+            ball_idx = self.current_action["ball_idx"]
+            path = self.current_action["path"]
             self.balls[ball_idx].move(path, board)
-
-        elif 'DISCARD' in self.current_intent:
-            card_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
-
-        elif 'JAILBREAK' in self.current_intent:
-            parts = self.current_intent.split(" ")
-            card_idx = int(parts[1].split("=")[-1])
-            ball_idx = int(parts[-1].split("=")[-1])
+        
+        elif 'JAILBREAK' == verb:
+            ball_idx = self.current_action["ball_idx"]
             self.balls[ball_idx].jailbreak(board)
 
-        elif 'BURN' in self.current_intent:
-            card_idx = int(self.current_intent.split(" ")[-1].split("=")[-1])
+        elif 'BURN' == verb:
             warning("Not implemented BURN Processing")
             # burn(next_player_hand)
             pass
 
-        elif 'SWAP' in self.current_intent:
-            parts = self.current_intent.split(" ")
-            card_idx = int(parts[1].split("=")[-1])
-            b1_idx = int(parts[2].split("=")[-1])
-            b2_pos = int(parts[3].split("=")[-1])
-            b1 = self.balls[b1_idx]
-            b2 = board.query_ball_at_idx(b2_pos)
+        elif 'SWAP' == verb:
+            ball_idx = self.current_action["ball_idx"]
+            target_ball_pos = self.current_action["target_ball_pos"]
+            b1 = self.balls[ball_idx]
+            b2 = board.query_ball_at_idx(target_ball_pos)
             b1.swap(b2, board)
 
+        elif verb == 'DISCARD':
+            pass #Nothing to do for a discard.
+
         else:
-            raise TypeError(f"Unkown intent {self.current_intent}")
+            raise TypeError(f"Unkown action {self.current_action}")
 
-        self.clear_intent()
+        card_idx = self.current_action['card_idx']
         card = self.remove_card(card_idx)
+        self.clear_actions()
         return card
-
-    def check_legal_intents(self, board:Board) -> List[List[str]]:
-        legal_intents:List[List[str]] = []
-        for intent_list in self.intents:
-            legal_intent_list:List[str] = []
-            for i in intent_list:
-                if 'MOVE' in i:
-                    for ball_idx, ball in enumerate(self.balls):
-                        offset = int(i.split(' ')[0].split("=")[-1])
-                        path = board.calculate_move_path(ball, offset)
-                        is_legal = ball.is_legal_move(path, board)
-                        if is_legal:
-                            legal_intent_list.append(i+ f" ball_idx={ball_idx} path={path}")
-
-                elif 'JAILBREAK' in i:
-                    for ball_idx, ball in enumerate(self.balls):
-                        if ball.can_jailbreak():
-                            legal_intent_list.append(i+ f" ball_idx={ball_idx}")
-
-                elif 'BURN' in i:
-                        #TODO: Check if last player in with 1 card in round
-                        legal_intent_list.append(i)
-
-                elif 'SWAP' in i:
-                    for ball_idx, ball in enumerate(self.balls):
-                        swappable = ball.can_swap(board)
-                        for b in swappable:
-                            legal_intent_list.append(i+ f" ball_idx={ball_idx} target_ball_pos={b.position}")
-
-                else:
-                    raise TypeError(f"Unkown intent {i}")
-            legal_intents.append(legal_intent_list)
-        
-        self.intents = legal_intents
     
+    def create_action(self, card_idx, card_value, verb, offset=None, target=None):
+        #TODO: Use kwargs or clean up conditionals 
+        if offset:
+            return dict({"card_idx":card_idx, "card_value":card_value, "verb": verb, "offset":offset})
+        elif target:
+            return dict({"card_idx":card_idx, "card_value":card_value, "verb": verb, "target":target})
+        else:
+            return dict({"card_idx":card_idx, "card_value":card_value, "verb": verb})
+
+    def get_actions(self):
+        actions = []
+        for card_idx, card_value in enumerate(self.hand):
+            verb = "MOVE"
+            offset = card_value
+            if card_value not in [1, 4, 10, 11, 13]:
+                card = self.create_action(card_idx, card_value, verb, offset)
+                actions.append(card)
+            else:
+                if card_value == 1:
+                    card = self.create_action(card_idx, card_value, verb, offset)
+                    actions.append(card)
+                    card = self.create_action(card_idx, card_value, verb, offset=11) #Create 2nd one for Ace
+                    actions.append(card)
+                    card = self.create_action(card_idx, card_value, verb="JAILBREAK") #Jailbreak
+                    actions.append(card)
+                elif card_value == 4:
+                    offset = -card_value
+                    card = self.create_action(card_idx, card_value, verb, offset)
+                    actions.append(card)
+                elif card_value == 10:
+                    card = self.create_action(card_idx, card_value, "BURN")
+                    actions.append(card)
+                elif card_value == 11:
+                    card = self.create_action(card_idx, card_value, "SWAP")
+                    actions.append(card)
+                elif card_value == 13:
+                    card = self.create_action(card_idx, card_value, verb="JAILBREAK") #Jailbreak
+                    actions.append(card)
+        self.actions = actions
+        return
+
+    def check_legal_actions(self, board):
+        legal_actions = []
+        for action in self.actions:
+            if action["verb"] == "MOVE":
+                for ball_idx, ball in enumerate(self.balls):
+                    offset = action["offset"]
+                    path = board.calculate_move_path(ball, offset)
+                    is_legal = ball.is_legal_move(path, board)
+                    if is_legal:
+                        new_action = action
+                        new_action['path'] = path
+                        new_action['ball_idx'] = ball_idx
+                        legal_actions.append(new_action)
+            elif action['verb'] == "JAILBREAK":
+                for ball_idx, ball in enumerate(self.balls):
+                            if ball.can_jailbreak():
+                                new_action = action
+                                new_action['ball_idx'] = ball_idx
+                                legal_actions.append(new_action)
+            elif action['verb'] == 'BURN':
+                #TODO: Check if last player in with 1 card in round
+                legal_actions.append(action)
+            elif action['verb'] == "SWAP":
+                for ball_idx, ball in enumerate(self.balls):
+                            swappable = ball.can_swap(board)
+                            if swappable:
+                                for b in swappable:
+                                    new_action = action
+                                    new_action['ball_idx'] = ball_idx
+                                    new_action['target_ball_pos'] = b.position
+                                    legal_actions.append(new_action)
+            else:
+                raise TypeError(f"Unkown verb in action {action}")
+        self.actions = legal_actions
+        return 
+        

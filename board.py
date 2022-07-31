@@ -48,18 +48,13 @@ class Board():
             one = list(range(start +1, self.len)) #left inclusive
             two = list(range(0, abs(offset) - len(one))) #loop around the board
             path = [*one, *two]
-            # print(f"loop from {start} to {end} via {path}")
         elif ball.position + offset < 0:
             one = list(range(start-1, -1, -1)) #inclusive left exclusive right to 0
             two = list(range(self.len - 1, self.len - (abs(offset) - len(one)), -1)) #TODO: Check off by one error
             path = [*one, *two]
-            # print(f"reverse loop from {start} to {end} via {path}")
         else:
             if offset > 0:
                 path = list(range(start +1, end +1))
-                # print(f"Standard forward from {start} to {end} via {path}")
             else:
-                path = list(range(start-1, end, -1))
-                # print(f"Standard backward from {start} to {end} via {path}")
-
+                path = list(range(start-1, end -1, -1))
         return path

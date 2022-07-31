@@ -101,6 +101,9 @@ class Ball:
             return True
     
     def can_swap(self, board):
+        if self.state == States.JAILED:
+            return False
+
         swapable:List[Ball] = []
         for i in range(board.len):
             if board.is_occupied(i):

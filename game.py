@@ -20,11 +20,10 @@ class Game():
         #TODO: Remove play turn from here
         print("=================================")
         for p in self.players:
-            p.get_intents()
-            p.check_legal_intents(self.board)
-            p.map_intents()
-            p.decide_intent()
-            print(p.hand, p.intents_map, p.current_intent, sep='\n')
-            card = p.play_turn(self.board)
+            p.get_actions()
+            p.check_legal_actions(self.board)
+            p.decide_action()
+            print(p.hand, p.current_action, sep='\n')
+            card = p.play_action(self.board)
             self.stack.append(card)
         self.board.print()

@@ -26,4 +26,6 @@ class Game():
             print(p.hand, p.current_action, sep='\n')
             card = p.play_action(self.board)
             self.stack.append(card)
+            if p.check_win(self.board):
+                raise Exception("GAME OVER!")
         self.board.print()

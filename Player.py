@@ -11,7 +11,8 @@ from board import Board
 class Player():
     def __init__(self, base_idx) -> None:
         self.base_idx = base_idx
-        self.balls = [Ball(self.base_idx), Ball(self.base_idx), Ball(self.base_idx), Ball(self.base_idx)]
+        self.number = self.base_idx_to_player_number(self.base_idx)
+        self.balls = [Ball(self.base_idx, self.number), Ball(self.base_idx, self.number), Ball(self.base_idx, self.number), Ball(self.base_idx, self.number)]
         self.hand = np.array([], dtype=np.int8)
         self.current_action = dict()
         self.actions = []
@@ -21,6 +22,16 @@ class Player():
     #     myballs =  [ball.__repr__ for ball in self.balls]
     #     p_dict['balls'] = myballs
     #     return json.dumps(p_dict)
+
+    def base_idx_to_player_number(self, base_idx):
+        if base_idx == 0:
+            return 1
+        elif base_idx == 19:
+            return 2
+        elif base_idx == 38:
+            return 3
+        elif base_idx == 57:
+            return 4
 
     def update_hand(self, new_hand):
         self.hand = new_hand
@@ -145,14 +156,17 @@ class Player():
         for action in self.actions:
             if action["verb"] == "MOVE":
                 for ball_idx, ball in enumerate(self.balls):
-                    offset = action["offset"]
-                    path = board.calculate_move_path(ball, offset)
-                    is_legal = ball.is_legal_move(path, board)
-                    if is_legal:
-                        new_action = deepcopy(action)
-                        new_action['path'] = path
-                        new_action['ball_idx'] = ball_idx
-                        legal_actions.append(new_action)
+                    if ball.state == States.JAILED or ball.state == States.COMPLETE:
+                        pass #Do nothing
+                    else:
+                        offset = action["offset"]
+                        path = board.calculate_move_path(ball, offset)
+                        is_legal = ball.is_legal_move(path, board)
+                        if is_legal:
+                            new_action = deepcopy(action)
+                            new_action['path'] = path
+                            new_action['ball_idx'] = ball_idx
+                            legal_actions.append(new_action)
 
             elif action['verb'] == "FLEXMOVE":
                 moveable = self.count_moveable_balls()
@@ -266,7 +280,7 @@ class Player():
     def count_moveable_balls(self):
         moveable = []
         for ball_idx, ball in enumerate(self.balls):
-            if ball.state != States.JAILED:
+            if ball.state != States.JAILED and ball.state != States.COMPLETE:
                 moveable.append(ball_idx)
         return moveable
     
@@ -287,3 +301,16 @@ class Player():
                 new_action['path2'] = path2
                 actions.append(new_action)
         return actions
+    
+    def check_win(self, board:Board) -> bool:
+        win_tiles = board.tiles[-16:]
+        my_win_tiles = win_tiles[(self.number-1)*4 : (self.number -1)*4 + 4]
+        if bool(my_win_tiles[-1]):
+            my_win_tiles[-1].set_complete()
+            if bool(my_win_tiles[-2]):
+                my_win_tiles[-2].set_complete()
+                if bool(my_win_tiles[-3]):
+                    my_win_tiles[-3].set_complete()
+                    if bool(my_win_tiles[-4]):
+                        my_win_tiles[-4].set_complete()
+        return my_win_tiles.all()

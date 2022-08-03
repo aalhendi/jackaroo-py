@@ -12,35 +12,31 @@ class States(IntEnum):
     JAILED = -1
     PROTECTED = 0
     ACTIVE = 1
+    COMPLETE = 2
 
 class Ball:
-    def __init__(self, base_idx) -> None:
+    def __init__(self, base_idx, owner) -> None:
         self.position = -1 #Out of bounds
         self.state = States.JAILED
         self.base_idx = base_idx
-        self.owner = self.base_idx_to_player_number(base_idx)
+        self.owner = owner
 
     def __repr__(self) -> str:
         return json.dumps(self.__dict__)
 
-    def base_idx_to_player_number(self, base_idx):
-        if base_idx == 0:
-            return 1
-        elif base_idx == 19:
-            return 2
-        elif base_idx == 38:
-            return 3
-        elif base_idx == 57:
-            return 4
-
     def upadate_position(self, idx)->None:
         self.position = idx
+
+    def set_complete(self):
+        self.state = States.COMPLETE
 
     def update_state(self) -> None:
         if self.position ==  self.base_idx:
             self.state = States.PROTECTED
         elif self.position ==  -1:
             self.state = States.JAILED
+        elif self.state == States.COMPLETE:
+            pass #Do nothing if ball is marked as complete
         else:
             self.state = States.ACTIVE
 
@@ -70,13 +66,12 @@ class Ball:
     
     def is_legal_move(self, path:List[int], board)-> bool:
             obstacles:List[Ball] = []
-            if self.state == States.JAILED:
+            if self.state == States.JAILED or self.state == States.COMPLETE:
                 return False
 
             if not path:
-                raise LookupError("No path to traverse")
-
-            #TODO: Handle victory legal moves
+                # warning("no path provided")
+                return False
 
             for i in path:
                 if board.is_occupied(i):
@@ -101,7 +96,7 @@ class Ball:
             return True
     
     def can_swap(self, board):
-        if self.state == States.JAILED:
+        if self.state == States.JAILED or self.position > board.len: # Cant swap if jailed or in win column
             return False
 
         swapable:List[Ball] = []

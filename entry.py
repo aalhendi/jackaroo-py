@@ -17,7 +17,7 @@ for i in [0, 1, 2, 3]:
     game.stack.append(card)
 
     jb = game.players[i].create_action(0, 4, "MOVE", offset=-4)
-    jb["ball_idx"] = 1
+    jb["ball_pos"] = game.players[i].base_idx
     jb["path"] = game.board.calculate_move_path(game.players[i].balls[1], -4)
     game.players[i].current_action = jb
     card = game.players[i].play_action(game.board)

@@ -15,11 +15,12 @@ class States(IntEnum):
     COMPLETE = 2
 
 class Ball:
-    def __init__(self, base_idx, owner) -> None:
+    def __init__(self, base_idx, owner, team) -> None:
         self.position = -1 #Out of bounds
         self.state = States.JAILED
         self.base_idx = base_idx
         self.owner = owner
+        self.team = team
 
     def __repr__(self) -> str:
         return json.dumps(self.__dict__)
@@ -53,7 +54,7 @@ class Ball:
         self.upadate_position(self.base_idx)
         board.update(self.base_idx, self)
         self.update_state()
-    
+
     def move(self, path:List[int], board) -> None:
         if board.is_occupied(path[-1]):
             board.handle_collison(path[-1])
@@ -63,7 +64,7 @@ class Ball:
         board.update(self.position, self)
         self.update_state()
 
-    
+
     def is_legal_move(self, path:List[int], board)-> bool:
             obstacles:List[Ball] = []
             if self.state == States.JAILED or self.state == States.COMPLETE:
@@ -94,7 +95,7 @@ class Ball:
                         return False #Illegal move. Obstacle in its base and you cannot overtake it
 
             return True
-    
+
     def can_swap(self, board):
         if self.state == States.JAILED or self.position > board.len: # Cant swap if jailed or in win column
             return False
@@ -103,7 +104,7 @@ class Ball:
         for i in range(board.len):
             if board.is_occupied(i):
                 ball = board.query_ball_at_idx(i)
-                if ball.state != States.PROTECTED and ball.base_idx != self.base_idx:
+                if ball.state == States.ACTIVE and ball.owner != self.owner:
                     swapable.append(ball)
         return swapable
 

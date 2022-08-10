@@ -11,7 +11,8 @@ class Player():
     def __init__(self, base_idx) -> None:
         self.base_idx = base_idx
         self.number:int = self.base_idx_to_player_number(self.base_idx)
-        self.balls = [Ball(self.base_idx, self.number), Ball(self.base_idx, self.number), Ball(self.base_idx, self.number), Ball(self.base_idx, self.number)]
+        self.team:int = self.number % 2 #NOTE: Hacky implementation works for 4 players but not more
+        self.balls = [Ball(self.base_idx, self.number, self.team), Ball(self.base_idx, self.number, self.team), Ball(self.base_idx, self.number, self.team), Ball(self.base_idx, self.number, self.team)]
         self.hand = np.array([], dtype=np.int8)
         self.current_action = dict()
         self.actions = []
@@ -21,6 +22,12 @@ class Player():
     #     myballs =  [ball.__repr__ for ball in self.balls]
     #     p_dict['balls'] = myballs
     #     return json.dumps(p_dict)
+
+    def create_balls(self) -> List[Ball]:
+        balls:List[Ball] = []
+        for _ in range(4):
+            balls.append(Ball(self.base_idx, self.number, self.team))
+        return balls
 
     def base_idx_to_player_number(self, base_idx) -> int:
         if base_idx == 0:
@@ -121,31 +128,28 @@ class Player():
         for card_idx, card_value in enumerate(self.hand):
             verb = "MOVE" #default verb
             offset = card_value #default offset
-            if card_value not in [1, 4, 7, 10, 11, 13]:
+            if card_value == 1:
                 card = self.create_action(card_idx, card_value, verb, offset=offset)
-                actions.append(card)
+                actions += [
+                    self.create_action(card_idx, card_value, verb, offset=11),
+                    self.create_action(card_idx, card_value, verb="JAILBREAK")
+                    ]
+            elif card_value == 4:
+                card = self.create_action(card_idx, card_value, verb, offset=-offset)
+            elif card_value == 5:
+                card = self.create_action(card_idx, card_value, "MOVEANY", offset=offset)
+            elif card_value == 7:
+                card = self.create_action(card_idx, card_value, "FLEXMOVE")
+            elif card_value == 10:
+                card = self.create_action(card_idx, card_value, "BURN")
+            elif card_value == 11:
+                card = self.create_action(card_idx, card_value, "SWAP")
+            elif card_value == 13:
+                card = self.create_action(card_idx, card_value, verb="JAILBREAK") #Jailbreak
             else:
-                if card_value == 1:
-                    actions += [
-                        self.create_action(card_idx, card_value, verb, offset=offset),
-                        self.create_action(card_idx, card_value, verb, offset=11),
-                        self.create_action(card_idx, card_value, verb="JAILBREAK")
-                        ]
-                elif card_value == 4:
-                    card = self.create_action(card_idx, card_value, verb, offset=-offset)
-                    actions.append(card)
-                elif card_value == 7:
-                    card = self.create_action(card_idx, card_value, "FLEXMOVE")
-                    actions.append(card)
-                elif card_value == 10:
-                    card = self.create_action(card_idx, card_value, "BURN")
-                    actions.append(card)
-                elif card_value == 11:
-                    card = self.create_action(card_idx, card_value, "SWAP")
-                    actions.append(card)
-                elif card_value == 13:
-                    card = self.create_action(card_idx, card_value, verb="JAILBREAK") #Jailbreak
-                    actions.append(card)
+                card = self.create_action(card_idx, card_value, verb, offset=offset)
+
+            actions.append(card)
         self.actions = actions
         return
 
@@ -260,6 +264,20 @@ class Player():
             elif action['verb'] == 'BURN':
                 #TODO: Check if last player in with 1 card in round
                 legal_actions.append(action)
+
+            elif action['verb'] == "MOVEANY":
+                offset = action['offset']
+                for tile in range(board.len):
+                    if board.is_occupied(tile):
+                        ball = board.query_ball_at_idx(tile)
+                        if ball.state == States.ACTIVE or ball.owner == self.number:
+                            path = board.calculate_move_path(ball, offset, team=self.team, is_five=True)
+                            if ball.is_legal_move(path, board):
+                                new_action = deepcopy(action)
+                                new_action['ball_pos'] = ball.position
+                                new_action["verb"] = "MOVE"
+                                new_action["path"] = path
+                                legal_actions.append(new_action)
 
             elif action['verb'] == "SWAP":
                 for ball_idx, ball in enumerate(self.balls):

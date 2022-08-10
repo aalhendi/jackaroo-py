@@ -6,9 +6,9 @@ from ball import Ball
 
 class Board():
     #TODO: Impl logger / visualizer
-    def __init__(self) -> None:
-        self.tiles = np.zeros(76 + 16, dtype=np.object_) # Board is a 76 element mask + 16 tiles for win columns
-        self.len = 76 #Fixed length board
+    def __init__(self, num_players:int) -> None:
+        self.len = num_players * 19 #Fixed length per player
+        self.tiles = np.zeros(self.len + 4*num_players, dtype=np.object_) # 4-player Board is a 76 element mask + 16 tiles for win columns
 
     def is_occupied(self, idx:int) -> bool:
             # Returns true if non-zero - aka ball present
@@ -38,11 +38,11 @@ class Board():
         self.update(target_ball.position, 0) #NOTE: Not needed. There for completion
         target_ball.upadate_position(-1) #TODO: Merge upadate position and update state. Have a jailbreak method etc.
         target_ball.update_state()
-    
-    def calculate_move_path(self, ball:Ball, offset:int) -> List[int]:
-        # if offset == 5:
-        #TODO: handle 5s
-            # raise NotImplemented("Cant find 5 paths")
+
+    def calculate_move_path(self, ball:Ball, offset:int, team=None, is_five=False) -> List[int]:
+        can_enter_win = True #By default all can enter winner col
+        if is_five and team != ball.team:
+            can_enter_win = False #If 5 & not same team then cant enter
 
         start = ball.position
         end = ball.position + offset
@@ -54,7 +54,7 @@ class Board():
             entry = self.len - 2 #For base_idx 0
 
         # Ball is somewhere in winners columns
-        if start >= self.len: 
+        if start >= self.len:
             #is it moveable?
             max_move = 0
             for i in range(start+1, col_end): #Check path
@@ -67,7 +67,7 @@ class Board():
             path = list(range(start+1, start+offset+1))
 
         # Potential entry into win column
-        elif start <= entry and end > entry: # Must start before the entrypoint with offset ending after entry
+        elif start <= entry and end > entry and can_enter_win: # Must start before the entrypoint with offset ending after entry
             # From start to entry
             one = list(range(start +1, entry +1))
             remainder = offset - len(one)
@@ -90,7 +90,7 @@ class Board():
 
         elif end < 0:
             one = list(range(start-1, -1, -1)) #inclusive left exclusive right to 0
-            two = list(range(self.len-1 , self.len-1 - (abs(offset) - len(one)), -1)) 
+            two = list(range(self.len-1 , self.len-1 - (abs(offset) - len(one)), -1))
             path = [*one, *two]
 
         elif offset > 0:

@@ -1,3 +1,4 @@
+from typing import List
 from Player import Player
 from deck import Deck
 from board import Board
@@ -5,10 +6,17 @@ from board import Board
 class Game():
     #TODO: Impl rounds
     def __init__(self) -> None:
-        self.board= Board()
+        self.num_players = 4
+        self.board = Board(self.num_players)
         self.deck = Deck()
-        self.players = [Player(0), Player(19), Player(38), Player(57)]
+        self.players = self.create_players()
         self.stack = [] #TODO: IMPLEMENT STACK
+
+    def create_players(self) -> List[Player]:
+        players:List[Player] = []
+        for i in range(self.num_players):
+            players.append(Player(i*19))
+        return players
 
     def init_game(self): #TODO: Rename
         self.deck.shuffle()

@@ -1,6 +1,6 @@
 from game import Game
 
-game = Game() #TODO: Impl this into game
+game = Game()  # TODO: Impl this into game
 deck = game.deck
 
 game.init_game()

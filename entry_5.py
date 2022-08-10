@@ -1,9 +1,9 @@
-#TODO: Fix these ghetto tests...
+# TODO: Fix these ghetto tests...
 
 import numpy as np
 from game import Game
 
-game = Game() #TODO: Impl this into game
+game = Game()  # TODO: Impl this into game
 deck = game.deck
 
 game.init_game()

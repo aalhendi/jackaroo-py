@@ -35,6 +35,14 @@ class Board():
     def update(self, idx, ball: Ball) -> None:
         self.tiles[idx] = ball
 
+    def get_balls(self):
+        balls = []
+        for tile in range(self.len):
+            if self.is_occupied(tile):
+                ball = self.query_ball_at_idx(tile)
+                balls.append(ball)
+        return balls
+
     def handle_collison(self, idx: int) -> None:
         target_ball = self.query_ball_at_idx(idx)
         # NOTE: Not needed. There for completion

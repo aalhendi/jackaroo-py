@@ -72,41 +72,48 @@ class Ball:
             return False
 
         if not path:
-            # warning("no path provided")
             return False
 
-        for i in path:
-            if board.is_occupied(i):
-                obstacles.append(board.query_ball_at_idx(i))
-
-        if obstacles:
-            problem_idx = 99  # NOTE: Just a default so static code checkers dont get mad
-            for obstacle_idx, obstacle in enumerate(obstacles):
-                if obstacle_idx == 0:
-                    problem_idx = obstacle.position+1
-                else:
-                    if problem_idx > board.len:
-                        problem_idx = 0
-                    if obstacle.position == problem_idx:  # TODO: Handle king?
-                        warning("\nIllegal MOVE\n")
-                        return False
-
-                if obstacle.position == obstacle.base_idx:
-                    warning("This path is obstructed")
-                    return False  # Illegal move. Obstacle in its base and you cannot overtake it
+        if len(path) > 1:
+            slow_tile = path[0]
+            slow_o = False
+            if board.is_occupied(slow_tile):
+                slow_o = board.query_ball_at_idx(slow_tile)
+                if slow_o.state == States.PROTECTED and slow_o.owner != self.owner:
+                    return False  # Path blocked by someone else's ball in base
+            else:
+                # Check rest of path
+                for tile in path[1:]:
+                    if board.is_occupied(slow_tile):
+                        slow_o = board.query_ball_at_idx(slow_tile)
+                    else:
+                        slow_o = False
+                    if board.is_occupied(tile):
+                        o = board.query_ball_at_idx(tile)
+                        if slow_o:
+                            if path[-1] == o.position or path[-1] == slow_o.position:
+                                return True  # Can land on one of the double obstacles if its the last step in path
+                            else:
+                                return False  # Path blocked by 2 consecutive balls and path not ending on one of them
+                    else:
+                        slow_tile = tile
+        else:
+            if board.is_occupied(path[0]):
+                o = board.query_ball_at_idx(path[0])
+                if o.state == States.PROTECTED and o.owner != self.owner:
+                    return False
 
         return True
 
-    def can_swap(self, board):
+    def get_swapable(self, board):
         if self.state == States.JAILED or self.position > board.len:  # Cant swap if jailed or in win column
             return False
 
         swapable: List[Ball] = []
-        for i in range(board.len):
-            if board.is_occupied(i):
-                ball = board.query_ball_at_idx(i)
-                if ball.state == States.ACTIVE and ball.owner != self.owner:
-                    swapable.append(ball)
+        balls = board.get_balls()
+        for ball in balls:
+            if ball.state == States.ACTIVE and ball.owner != self.owner and ball.position < board.len:
+                swapable.append(ball)
         return swapable
 
     def swap(self, target_ball: Self, board):

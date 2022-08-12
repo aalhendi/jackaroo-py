@@ -50,18 +50,19 @@ class Player():
     def update_hand(self, new_hand):
         self.hand = new_hand
 
-    def burn(self) -> int:
+    def burn(self):
         np.random.shuffle(self.hand)
-        burned = self.hand[0]
+        card_value = self.hand[0]
         self.hand = self.hand[1:]
-        return burned
+        action = {"card_value": card_value, "verb": "DISCARD", "is_burn": True}
+        return action
 
     def remove_card(self, card_value: int) -> int:
         hand: List = self.hand.tolist()
         idx = hand.index(card_value)
-        removed = hand.pop(idx)
+        hand.pop(idx)
         self.hand = np.array(hand, dtype=np.int8)
-        return removed
+        return
 
     def decide_action(self):
         # TODO: Impl basic set of rules?
@@ -69,7 +70,8 @@ class Player():
         if len(self.actions) == 0:
             card_idx = random.randrange(len(self.hand))
             card_value = self.hand[card_idx]
-            action = {"card_value": card_value, "verb": "DISCARD"}
+            action = {"card_value": card_value,
+                      "verb": "DISCARD", "is_burn": False}
             self.current_action = action
             return
 
@@ -81,7 +83,9 @@ class Player():
         self.actions = []
 
     def play_action(self, board: Board):
-        verb = self.current_action['verb']
+        action = self.current_action
+        verb = action['verb']
+
         if verb == "MOVE":
             ball_pos = self.current_action["ball_pos"]
             ball = board.query_ball_at_idx(ball_pos)
@@ -93,9 +97,8 @@ class Player():
             self.balls[ball_idx].jailbreak(board)
 
         elif 'BURN' == verb:
-            # utils.burn_player(next_player_idx)
-            # in utils func, call player.burn()
-            warning("BURN processing not implemented")
+            # Do nothing. Burn is handled by game
+            pass
 
         elif verb == "FLEXMOVE":
             ball_pos1 = self.current_action["ball_pos1"]
@@ -120,9 +123,9 @@ class Player():
         else:
             raise TypeError(f"Unkown action {self.current_action}")
 
-        card = self.remove_card(self.current_action["card_value"])
+        self.remove_card(self.current_action["card_value"])
         self.clear_actions()
-        return card
+        return action
 
     def get_actions(self):
         actions = []
@@ -175,8 +178,9 @@ class Player():
                         legal_actions.append(action)
 
             elif action['verb'] == 'BURN':
-                # TODO: Check if last player in with 1 card in round
-                legal_actions.append(action)
+                can_burn = self.can_burn()
+                if can_burn:
+                    legal_actions.append(action)
 
             elif action['verb'] == "MOVEANY":
                 offset = action['offset']
@@ -210,6 +214,13 @@ class Player():
             if ball.state != States.JAILED and ball.state != States.COMPLETE:
                 moveable.append(ball_idx)
         return moveable
+
+    def can_burn(self):
+        # Cant burn if last to play turn with one card left.
+        if len(self.hand) == 1 and self.turn_order[-1]+1 == self.number:
+            return False
+        else:
+            return True
 
     def check_flexmove_pair(self, board: Board, action, ball1: Ball, ball2: Ball, ball_pos1: int, ball_pos2: int):
         path1 = board.calculate_move_path(ball1, action["offset1"])

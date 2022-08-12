@@ -6,7 +6,6 @@ import numpy as np
 
 
 class Game():
-    # TODO: Impl rounds
     def __init__(self) -> None:
         self.num_players: int = 4
         self.board = Board(self.num_players)
@@ -14,7 +13,8 @@ class Game():
         self.turn_order = np.array(
             list(range(self.num_players)), dtype=np.int8)
         self.players = self.create_players()
-        self.stack = []  # TODO: IMPLEMENT STACK
+        self.stack = []
+        self.skip_next = False
 
     def create_players(self) -> List[Player]:
         players: List[Player] = []
@@ -36,19 +36,24 @@ class Game():
             p.set_turn_context(self.turn_order)
 
     def process_hands(self):
-        # TODO: Remove play turn from here
+        # TODO: Add human player: In place of decide_action, print the legal actions and await selection input from player.
         print("=================================")
         for p in self.turn_order:
-            if len(self.players[p].hand) == self.deck.expected_hand_length:
+            print(
+                f"Player Number: {self.players[p].number}", self.players[p].hand, sep='\n')
+            if not self.skip_next:
                 self.players[p].get_actions()
                 self.players[p].check_legal_actions(self.board)
                 self.players[p].decide_action()
-                print(self.players[p].hand,
-                      self.players[p].current_action, sep='\n')
-                card = self.players[p].play_action(self.board)
-                self.stack.append(card)
+                action = self.players[p].play_action(self.board)
+                if action["verb"] == "BURN":
+                    self.skip_next = True
             else:
-                pass  # Do Nothing if wrong hand_len (burn happened)
+                action = self.players[p].burn()
+                self.skip_next = False
+
+            print(action)
+            self.stack.append(action)
             if self.players[p].check_win(self.board):
                 raise Exception("GAME OVER!")
         self.board.print()

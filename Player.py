@@ -4,12 +4,11 @@ import random
 from typing import List
 from ball import Ball, States
 import numpy as np
-
 from board import Board
 
 
 class Player():
-    def __init__(self, base_idx) -> None:
+    def __init__(self, base_idx, turn_order) -> None:
         self.base_idx = base_idx
         self.number: int = self.base_idx_to_player_number(self.base_idx)
         # NOTE: Hacky implementation works for 4 players but not more
@@ -19,12 +18,16 @@ class Player():
         self.hand = np.array([], dtype=np.int8)
         self.current_action = dict()
         self.actions = []
+        self.turn_order = turn_order
 
     # def __repr__(self) -> str:
     #     p_dict = self.__dict__
     #     myballs =  [ball.__repr__ for ball in self.balls]
     #     p_dict['balls'] = myballs
     #     return json.dumps(p_dict)
+
+    def set_turn_context(self, turn_order):
+        self.turn_order = turn_order
 
     def create_balls(self) -> List[Ball]:
         balls: List[Ball] = []
@@ -48,7 +51,6 @@ class Player():
         self.hand = new_hand
 
     def burn(self) -> int:
-        # TODO: skip next guys turn. Could be a game method that checks hand lengths in can_play_turn()
         np.random.shuffle(self.hand)
         burned = self.hand[0]
         self.hand = self.hand[1:]
@@ -90,9 +92,9 @@ class Player():
             self.balls[ball_idx].jailbreak(board)
 
         elif 'BURN' == verb:
-            warning("Not implemented BURN Processing")
-            # burn(next_player_hand)
-            pass
+            # utils.burn_player(next_player_idx)
+            # in utils func, call player.burn()
+            warning("BURN processing not implemented")
 
         elif verb == "FLEXMOVE":
             ball_pos1 = self.current_action["ball_pos1"]

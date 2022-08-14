@@ -106,7 +106,7 @@ class Ball:
         return True
 
     def get_swapable(self, board):
-        if self.state == States.JAILED or self.position > board.len:  # Cant swap if jailed or in win column
+        if self.state == States.JAILED or self.position >= board.len:  # Cant swap if jailed or in win column
             return False
 
         swapable: List[Ball] = []

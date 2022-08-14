@@ -51,9 +51,9 @@ class Board():
         target_ball.upadate_position(-1)
         target_ball.update_state()
 
-    def calculate_move_path(self, ball: Ball, offset: int, team=None, is_five=False) -> List[int]:
+    def calculate_move_path(self, ball: Ball, offset: int, team_number=None, is_five=False) -> List[int]:
         can_enter_win = True  # By default all can enter winner col
-        if is_five and team != ball.team:
+        if is_five and team_number != ball.team_number:
             can_enter_win = False  # If 5 & not same team then cant enter
 
         start = ball.position

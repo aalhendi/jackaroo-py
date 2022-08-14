@@ -6,16 +6,16 @@ from ball import Ball, States
 import numpy as np
 from board import Board
 from utils.actions import action_map
+from pprint import pformat
 
 
 class Player():
-    def __init__(self, base_idx, turn_order) -> None:
+    def __init__(self, base_idx, turn_order, team_number) -> None:
         self.base_idx = base_idx
-        self.number: int = self.base_idx_to_player_number(self.base_idx)
-        # NOTE: Hacky implementation works for 4 players but not more
-        self.team: int = self.number % 2
-        self.balls = [Ball(self.base_idx, self.number, self.team), Ball(self.base_idx, self.number, self.team), Ball(
-            self.base_idx, self.number, self.team), Ball(self.base_idx, self.number, self.team)]
+        self.number: int = (self.base_idx // 19)+1
+        self.team_number = team_number
+        self.balls: List[Ball] = [
+            Ball(self.base_idx, self.number, self.team_number) for _ in range(4)]
         self.hand = np.array([], dtype=np.int8)
         self.current_action = dict()
         self.actions = []
@@ -31,24 +31,6 @@ class Player():
     def set_turn_context(self, turn_order):
         self.turn_order = turn_order
 
-    def create_balls(self) -> List[Ball]:
-        balls: List[Ball] = []
-        for _ in range(4):
-            balls.append(Ball(self.base_idx, self.number, self.team))
-        return balls
-
-    def base_idx_to_player_number(self, base_idx) -> int:
-        if base_idx == 0:
-            return 1
-        elif base_idx == 19:
-            return 2
-        elif base_idx == 38:
-            return 3
-        elif base_idx == 57:
-            return 4
-        else:
-            return -1
-
     def update_hand(self, new_hand):
         self.hand = new_hand
 
@@ -61,8 +43,7 @@ class Player():
 
     def remove_card(self, card_value: int) -> int:
         hand: List = self.hand.tolist()
-        idx = hand.index(card_value)
-        hand.pop(idx)
+        hand.pop(hand.index(card_value))
         self.hand = np.array(hand, dtype=np.int8)
         return
 
@@ -190,7 +171,7 @@ class Player():
                 for ball in balls:
                     if ball.state == States.ACTIVE or ball.owner == self.number:
                         path = board.calculate_move_path(
-                            ball, offset, team=self.team, is_five=True)
+                            ball, offset, team_number=self.team_number, is_five=True)
                         if ball.is_legal_move(path, board):
                             details = {"ball_pos": ball.position,
                                        "verb": "MOVE", "path": path}

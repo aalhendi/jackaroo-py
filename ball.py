@@ -17,12 +17,12 @@ class States(IntEnum):
 
 
 class Ball:
-    def __init__(self, base_idx, owner, team) -> None:
+    def __init__(self, base_idx, owner, team_number) -> None:
         self.position = -1  # Out of bounds
         self.state = States.JAILED
         self.base_idx = base_idx
         self.owner = owner
-        self.team = team
+        self.team_number = team_number
 
     def __repr__(self) -> str:
         return json.dumps(self.__dict__)

@@ -1,4 +1,5 @@
-from logging import warning
+from copy import deepcopy
+import json
 import random
 from typing import List
 from ball import Ball, States
@@ -20,11 +21,12 @@ class Player():
         self.actions = []
         self.turn_order = turn_order
 
-    # def __repr__(self) -> str:
-    #     p_dict = self.__dict__
-    #     myballs =  [ball.__repr__ for ball in self.balls]
-    #     p_dict['balls'] = myballs
-    #     return json.dumps(p_dict)
+    def __repr__(self) -> str:
+        p_dict = deepcopy(self.__dict__)
+        balls = [pformat(json.loads(ball.__repr__())) for ball in self.balls]
+        p_dict.update({'balls': balls, 'hand': self.hand.tolist(),
+                      'turn_order': self.turn_order.tolist()})
+        return pformat(p_dict)
 
     def set_turn_context(self, turn_order):
         self.turn_order = turn_order

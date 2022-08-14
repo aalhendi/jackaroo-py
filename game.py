@@ -8,23 +8,16 @@ import numpy as np
 class Game():
     def __init__(self) -> None:
         self.num_players: int = 4
+        self.num_teams: int = self.num_players//2
         self.board = Board(self.num_players)
         self.deck = Deck()
         self.deck.shuffle()
         self.turn_order = np.array(
             list(range(self.num_players)), dtype=np.int8)
-        self.players = self.create_players()
+        self.players = [Player(i*19, self.turn_order, i%self.num_teams) for i in range(self.num_players)]
         self.stack = []
         self.skip_next = False
-
-    def create_players(self) -> List[Player]:
-        players: List[Player] = []
-        for i in range(self.num_players):
-            players.append(Player(i*19, self.turn_order))
-        return players
-
-    def init_game(self):  # TODO: Rename
-        self.deck.shuffle()
+        self.is_over = False
 
     def deal_cards(self):
         hands = self.deck.deal()
@@ -35,6 +28,13 @@ class Game():
         self.turn_order = np.roll(self.turn_order, -1)
         for p in self.players:
             p.set_turn_context(self.turn_order)
+
+    def check_is_over(self):
+        player_wins = [player.check_win(self.board) for player in self.players]
+        for t_num in range(self.num_teams):
+            if player_wins[t_num] and player_wins[t_num+self.num_teams]:
+                self.is_over = True
+                return True
 
     def process_hands(self):
         # TODO: Add human player: In place of decide_action, print the legal actions and await selection input from player.
@@ -55,6 +55,6 @@ class Game():
 
             print(action)
             self.stack.append(action)
-            if self.players[p].check_win(self.board):
-                raise Exception("GAME OVER!")
+            if self.check_is_over():
+                break
         self.board.print()

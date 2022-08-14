@@ -10,6 +10,7 @@ class Game():
         self.num_players: int = 4
         self.board = Board(self.num_players)
         self.deck = Deck()
+        self.deck.shuffle()
         self.turn_order = np.array(
             list(range(self.num_players)), dtype=np.int8)
         self.players = self.create_players()

@@ -7,7 +7,6 @@ from utils.actions import action_map
 game = Game()  # TODO: Impl this into game
 deck = game.deck
 
-game.init_game()
 for i in game.turn_order:
     game.players[i].hand = np.array([1, 4, 3, 2], dtype=np.int8)
 

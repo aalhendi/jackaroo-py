@@ -3,9 +3,6 @@ from game import Game
 game = Game()  # TODO: Impl this into game
 deck = game.deck
 
-# Setup
-game.init_game()
-
 # Play till winner
 while True:
     # Play a whole deck, 4-4-5

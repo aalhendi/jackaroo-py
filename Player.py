@@ -20,6 +20,8 @@ class Player():
         self.current_action = dict()
         self.actions = []
         self.turn_order = turn_order
+        self.is_finished = False
+        self.teammate_balls = []
 
     def __repr__(self) -> str:
         p_dict = deepcopy(self.__dict__)
@@ -30,6 +32,9 @@ class Player():
 
     def set_turn_context(self, turn_order):
         self.turn_order = turn_order
+
+    def set_teammate_balls(self, balls):
+        self.teammate_balls = balls
 
     def update_hand(self, new_hand):
         self.hand = new_hand
@@ -70,26 +75,27 @@ class Player():
         verb = action['verb']
 
         if verb == "MOVE":
-            ball_pos = self.current_action["ball_pos"]
-            ball = board.query_ball_at_idx(ball_pos)
+            ball = board.query_ball_at_idx(self.current_action["ball_pos"])
             path = self.current_action["path"]
             ball.move(path, board)
 
         elif 'JAILBREAK' == verb:
             ball_idx = self.current_action["ball_idx"]
-            self.balls[ball_idx].jailbreak(board)
+            if self.is_finished:
+                balls = self.teammate_balls
+            else:
+                balls = self.balls
+            balls[ball_idx].jailbreak(board)
 
         elif 'BURN' == verb:
             # Do nothing. Burn is handled by game
             pass
 
         elif verb == "FLEXMOVE":
-            ball_pos1 = self.current_action["ball_pos1"]
-            ball_pos2 = self.current_action["ball_pos2"]
             path1 = self.current_action["path1"]
             path2 = self.current_action["path2"]
-            ball1 = board.query_ball_at_idx(ball_pos1)
-            ball2 = board.query_ball_at_idx(ball_pos2)
+            ball1 = board.query_ball_at_idx(self.current_action["ball_pos1"])
+            ball2 = board.query_ball_at_idx(self.current_action["ball_pos2"])
             ball1.move(path1, board)
             ball2.move(path2, board)
 
@@ -119,12 +125,15 @@ class Player():
 
     def check_legal_actions(self, board: Board):
         legal_actions = []
-        moveable = self.get_moveable_balls()
+        if self.is_finished:
+            balls = self.teammate_balls
+        else:
+            balls = self.balls
+        moveable = self.get_moveable_balls(balls)
         for action in self.actions:
             if action["verb"] == "MOVE":
                 if len(moveable) > 0:
-                    for ball_idx in moveable:
-                        ball = self.balls[ball_idx]
+                    for ball in moveable:
                         offset = action["offset"]
                         path = board.calculate_move_path(ball, offset)
                         is_legal = ball.is_legal_move(path, board)
@@ -145,17 +154,15 @@ class Player():
 
                 if len(moveable) > 1:
                     for i, k in pairs:
-                        ball_idx1 = moveable[i]
-                        ball_idx2 = moveable[k]
-                        ball1 = self.balls[ball_idx1]
-                        ball2 = self.balls[ball_idx2]
+                        ball1 = moveable[i]
+                        ball2 = moveable[k]
                         new_action = self.check_flexmove_pair(
                             board, action, ball1, ball2, ball1.position, ball2.position)
                         if new_action:
                             legal_actions.append(new_action)
 
             elif action['verb'] == "JAILBREAK":
-                for ball_idx, ball in enumerate(self.balls):
+                for ball_idx, ball in enumerate(balls):
                     if ball.can_jailbreak():
                         action.update({"ball_idx": ball_idx})
                         legal_actions.append(action)
@@ -169,7 +176,11 @@ class Player():
                 offset = action['offset']
                 balls = board.get_balls()
                 for ball in balls:
-                    if ball.state == States.ACTIVE or ball.owner == self.number:
+                    if self.is_finished:
+                        can_move = ball.team_number == self.team_number
+                    else:
+                        can_move = ball.owner == self.number
+                    if ball.state == States.ACTIVE or can_move:
                         path = board.calculate_move_path(
                             ball, offset, team_number=self.team_number, is_five=True)
                         if ball.is_legal_move(path, board):
@@ -179,7 +190,7 @@ class Player():
                             legal_actions.append(action)
 
             elif action['verb'] == "SWAP":
-                for ball_idx, ball in enumerate(self.balls):
+                for ball in balls:
                     swappable = ball.get_swapable(board)
                     if swappable:
                         for b in swappable:
@@ -191,11 +202,11 @@ class Player():
         self.actions = legal_actions
         return
 
-    def get_moveable_balls(self):
+    def get_moveable_balls(self, balls:List[Ball]):
         moveable = []
-        for ball_idx, ball in enumerate(self.balls):
+        for ball in balls:
             if ball.state != States.JAILED and ball.state != States.COMPLETE:
-                moveable.append(ball_idx)
+                moveable.append(ball)
         return moveable
 
     def can_burn(self):
@@ -218,6 +229,8 @@ class Player():
             return False
 
     def check_win(self, board: Board) -> bool:
+        if self.is_finished:
+            return self.is_finished
         win_tiles = board.tiles[-16:]
         my_win_tiles = win_tiles[(self.number-1)*4: (self.number - 1)*4 + 4]
         if bool(my_win_tiles[-1]):
@@ -228,4 +241,6 @@ class Player():
                     my_win_tiles[-3].set_complete()
                     if bool(my_win_tiles[-4]):
                         my_win_tiles[-4].set_complete()
-        return bool(my_win_tiles.all())
+        is_finished = bool(my_win_tiles.all())
+        self.is_finished = is_finished
+        return is_finished

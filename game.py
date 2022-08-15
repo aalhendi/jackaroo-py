@@ -14,10 +14,18 @@ class Game():
         self.deck.shuffle()
         self.turn_order = np.array(
             list(range(self.num_players)), dtype=np.int8)
-        self.players = [Player(i*19, self.turn_order, i%self.num_teams) for i in range(self.num_players)]
+        self.players = self.create_players()
         self.stack = []
         self.skip_next = False
         self.is_over = False
+
+    def create_players(self):
+        players = [Player(i*19, self.turn_order, i % self.num_teams)
+                   for i in range(self.num_players)]
+        for i in range(self.num_teams):
+            players[i].set_teammate_balls(players[i+self.num_teams].balls)
+            players[i+self.num_teams].set_teammate_balls(players[i].balls)
+        return players
 
     def deal_cards(self):
         hands = self.deck.deal()

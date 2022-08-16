@@ -3,7 +3,6 @@ import json
 import random
 from typing import List
 from ball import Ball, States
-import numpy as np
 from board import Board
 from utils.actions import action_map
 from pprint import pformat
@@ -16,7 +15,7 @@ class Player():
         self.team_number = team_number
         self.balls: List[Ball] = [
             Ball(self.base_idx, self.number, self.team_number) for _ in range(4)]
-        self.hand = np.array([], dtype=np.int8)
+        self.hand = []
         self.current_action = dict()
         self.actions = []
         self.turn_order = turn_order
@@ -24,10 +23,9 @@ class Player():
         self.teammate_balls = []
 
     def __repr__(self) -> str:
-        p_dict = deepcopy(self.__dict__)
+        p_dict = deepcopy(vars(self))
         balls = [pformat(json.loads(ball.__repr__())) for ball in self.balls]
-        p_dict.update({'balls': balls, 'hand': self.hand.tolist(),
-                      'turn_order': self.turn_order.tolist()})
+        p_dict.update({'balls': balls})
         return pformat(p_dict)
 
     def set_turn_context(self, turn_order):
@@ -40,16 +38,14 @@ class Player():
         self.hand = new_hand
 
     def burn(self):
-        np.random.shuffle(self.hand)
+        random.shuffle(self.hand)
         card_value = self.hand[0]
         self.hand = self.hand[1:]
         action = {"card_value": card_value, "verb": "DISCARD", "is_burn": True}
         return action
 
     def remove_card(self, card_value: int) -> int:
-        hand: List = self.hand.tolist()
-        hand.pop(hand.index(card_value))
-        self.hand = np.array(hand, dtype=np.int8)
+        self.hand.pop(self.hand.index(card_value))
         return
 
     def decide_action(self):
@@ -241,6 +237,6 @@ class Player():
                     my_win_tiles[-3].set_complete()
                     if bool(my_win_tiles[-4]):
                         my_win_tiles[-4].set_complete()
-        is_finished = bool(my_win_tiles.all())
+        is_finished = all(my_win_tiles)
         self.is_finished = is_finished
         return is_finished

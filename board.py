@@ -1,16 +1,17 @@
-from copy import deepcopy
 from typing import List
-import numpy as np
-import numpy.typing as npt
 from ball import Ball
 
 
 class Board():
     # TODO: Impl logger / visualizer
     def __init__(self, num_players: int) -> None:
-        self.len = num_players * 19  # Fixed length per player
+        self.num_players = num_players
+        self.ROW_LEN = 19
+        self.WIN_COL_LEN = 4
+        self.len = num_players * self.ROW_LEN  # Fixed length per player
+        self.win_len = num_players * self.WIN_COL_LEN  # Fixed length per player
         # 4-player Board is a 76 element mask + 16 tiles for win columns
-        self.tiles = np.zeros(self.len + 4*num_players, dtype=np.object_)
+        self.tiles = [0]*(self.len + self.win_len)
 
     def is_occupied(self, idx: int) -> bool:
         # Returns true if non-zero - aka ball present
@@ -20,17 +21,16 @@ class Board():
         return self.tiles[idx]
 
     def print(self) -> None:
-        tiles = deepcopy(self.tiles)
-        winners = tiles[-16:]
-        tiles = tiles[:-16]
+        winners = self.tiles[-self.win_len:]
+        tiles = self.tiles[:-self.win_len]
         for idx, tile in enumerate(tiles):
             if isinstance(tile, Ball):
                 tiles[idx] = tile.owner
         for idx, tile in enumerate(winners):
             if isinstance(tile, Ball):
                 winners[idx] = tile.owner
-        print(*tiles.reshape(4, 19), sep='\n')
-        print(*winners.reshape(4, 4), sep='\n')
+        [print(tiles[i*self.ROW_LEN:(i+1)*self.ROW_LEN], '\t', winners[i *
+               self.WIN_COL_LEN:(i+1)*self.WIN_COL_LEN]) for i in range(self.num_players)]
 
     def update(self, idx, ball: Ball) -> None:
         self.tiles[idx] = ball
@@ -59,8 +59,8 @@ class Board():
         start = ball.position
         end = ball.position + offset
         # Starting tile for that win player's win column
-        col_start = self.len + (4*(ball.owner-1))
-        col_end = col_start + 4
+        col_start = self.len + (self.WIN_COL_LEN*(ball.owner-1))
+        col_end = col_start + self.WIN_COL_LEN
         if (ball.base_idx - 2) > 0:
             entry = ball.base_idx - 2
         else:

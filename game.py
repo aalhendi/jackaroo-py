@@ -2,18 +2,16 @@ from typing import List
 from Player import Player
 from deck import Deck
 from board import Board
-import numpy as np
-
+from collections import deque
 
 class Game():
-    def __init__(self) -> None:
-        self.num_players: int = 4
+    def __init__(self, num_players=4) -> None:
+        self.num_players: int = num_players
         self.num_teams: int = self.num_players//2
         self.board = Board(self.num_players)
-        self.deck = Deck()
+        self.deck = Deck(self.num_players)
         self.deck.shuffle()
-        self.turn_order = np.array(
-            list(range(self.num_players)), dtype=np.int8)
+        self.turn_order = deque(list(range(self.num_players)))
         self.players = self.create_players()
         self.stack = []
         self.skip_next = False
@@ -33,7 +31,7 @@ class Game():
             self.players[t].update_hand(hands[idx])
 
     def roll_turn_order(self):
-        self.turn_order = np.roll(self.turn_order, -1)
+        self.turn_order.rotate(-1)
         for p in self.players:
             p.set_turn_context(self.turn_order)
 
@@ -66,3 +64,27 @@ class Game():
             if self.check_is_over():
                 break
         self.board.print()
+
+    def run(self):
+        # Play till winner
+        while not self.is_over:
+            # Play a whole deck, 4-4-5
+            while self.deck.rounds_remaining > 0 and not self.is_over:
+                self.deal_cards()
+                self.deck.decrement_rounds()
+            # Play whole hand
+
+                while self.deck.expected_hand_length > 0 and not self.is_over:
+                    # Every player plays card
+                    self.process_hands()
+                    self.deck.decrement_hand_length()
+                    print(
+                        f"rounds left: {self.deck.rounds_remaining}, exp_hand: {self.deck.expected_hand_length}, turn_order {self.turn_order}")
+                    # input("Completed Hand Cycle")
+            # print("\n\n")
+        # Pass the deck, change the delaer
+            self.roll_turn_order()
+            self.deck.reset()
+            self.deck.shuffle()
+            # input("Completed Deck Cycle")
+        return [player.check_win(self.board) for player in self.players]

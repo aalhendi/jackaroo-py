@@ -2,8 +2,6 @@ from enum import IntEnum
 from logging import warning
 from typing import List, Tuple
 from typing_extensions import Self
-import numpy as np
-import numpy.typing as npt
 import json
 
 # from board import Board #TODO: FIX circular imports
@@ -67,7 +65,6 @@ class Ball:
         self.update_state()
 
     def is_legal_move(self, path: List[int], board) -> bool:
-        obstacles: List[Ball] = []
         if self.state == States.JAILED or self.state == States.COMPLETE:
             return False
 

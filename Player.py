@@ -4,6 +4,7 @@ import random
 from typing import List
 from ball import Ball, States
 from board import Board
+from policies import homemade_heuristic, random_policy
 from utils.actions import action_map
 from pprint import pformat
 
@@ -48,18 +49,13 @@ class Player():
         self.hand.pop(self.hand.index(card_value))
         return
 
-    def decide_action(self):
-        # TODO: Impl basic set of rules?
-        # Check if theres at least one card to be played
-        if len(self.actions) == 0:
-            card_idx = random.randrange(len(self.hand))
-            card_value = self.hand[card_idx]
-            action = {"card_value": card_value,
-                      "verb": "DISCARD", "is_burn": False}
-            self.current_action = action
-            return
-
-        action = random.choice(self.actions)
+    def decide_action(self, policy="random"):
+        if policy == "random":
+            action = random_policy(self.actions, self.hand)
+        elif policy == "homemade":
+            action = homemade_heuristic(self.actions, self.hand)
+        else:
+            raise NotImplementedError("Policy not implemented:", policy)
         self.current_action = action
 
     def clear_actions(self) -> None:
@@ -198,7 +194,7 @@ class Player():
         self.actions = legal_actions
         return
 
-    def get_moveable_balls(self, balls:List[Ball]):
+    def get_moveable_balls(self, balls: List[Ball]):
         moveable = []
         for ball in balls:
             if ball.state != States.JAILED and ball.state != States.COMPLETE:

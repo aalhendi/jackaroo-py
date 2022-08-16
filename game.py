@@ -4,6 +4,7 @@ from deck import Deck
 from board import Board
 from collections import deque
 
+
 class Game():
     def __init__(self, num_players=4) -> None:
         self.num_players: int = num_players
@@ -51,7 +52,7 @@ class Game():
             if not self.skip_next:
                 self.players[p].get_actions()
                 self.players[p].check_legal_actions(self.board)
-                self.players[p].decide_action()
+                self.players[p].decide_action(policy="random")
                 action = self.players[p].play_action(self.board)
                 if action["verb"] == "BURN":
                     self.skip_next = True
@@ -65,7 +66,7 @@ class Game():
                 break
         self.board.print()
 
-    def run(self):
+    def run(self, step=False):
         # Play till winner
         while not self.is_over:
             # Play a whole deck, 4-4-5
@@ -80,11 +81,12 @@ class Game():
                     self.deck.decrement_hand_length()
                     print(
                         f"rounds left: {self.deck.rounds_remaining}, exp_hand: {self.deck.expected_hand_length}, turn_order {self.turn_order}")
-                    # input("Completed Hand Cycle")
-            # print("\n\n")
+                    if step:
+                        input("Completed Hand Cycle\n")
         # Pass the deck, change the delaer
             self.roll_turn_order()
             self.deck.reset()
             self.deck.shuffle()
-            # input("Completed Deck Cycle")
+            if step:
+                input("Completed Deck Cycle\n")
         return [player.check_win(self.board) for player in self.players]

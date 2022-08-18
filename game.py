@@ -1,4 +1,5 @@
-from typing import List
+from __future__ import annotations
+from typing import Any
 from Player import Player
 from deck import Deck
 from board import Board
@@ -6,19 +7,24 @@ from collections import deque
 
 
 class Game():
-    def __init__(self, num_players=4) -> None:
-        self.num_players: int = num_players
-        self.num_teams: int = self.num_players//2
+    def __init__(self, num_players: int = 4) -> None:
+        self.num_players = num_players
+        self.num_teams = self.num_players//2
         self.board = Board(self.num_players)
         self.deck = Deck(self.num_players)
         self.deck.shuffle()
         self.turn_order = deque(list(range(self.num_players)))
         self.players = self.create_players()
-        self.stack = []
-        self.skip_next = False
-        self.is_over = False
+        self.stack: list[dict[str, Any]] = []
+        self.skip_next: bool = False
+        self.is_over: bool = False
 
-    def create_players(self):
+    def create_players(self) -> list[Player]:
+        """ Creates player instances
+
+        Returns:
+            list[Player]: list of Player instances
+        """
         players = [Player(i*19, self.turn_order, i % self.num_teams)
                    for i in range(self.num_players)]
         for i in range(self.num_teams):
@@ -26,24 +32,32 @@ class Game():
             players[i+self.num_teams].set_teammate_balls(players[i].balls)
         return players
 
-    def deal_cards(self):
+    def deal_cards(self) -> None:
+        """ Updates hands for player instances """
         hands = self.deck.deal()
         for t, idx in enumerate(self.turn_order):
             self.players[t].update_hand(hands[idx])
 
-    def roll_turn_order(self):
+    def roll_turn_order(self) -> None:
+        """ Rotates turn_order property and updates it in player instances"""
         self.turn_order.rotate(-1)
         for p in self.players:
             p.set_turn_context(self.turn_order)
 
-    def check_is_over(self):
+    def check_is_over(self) -> bool:
+        """Checks if 2 players in a team have won
+
+        Returns:
+            bool: True if team has won via completing all win columns
+        """
         player_wins = [player.check_win(self.board) for player in self.players]
         for t_num in range(self.num_teams):
             if player_wins[t_num] and player_wins[t_num+self.num_teams]:
                 self.is_over = True
                 return True
+        return False
 
-    def process_hands(self):
+    def process_hands(self) -> None:
         # TODO: Add human player: In place of decide_action, print the legal actions and await selection input from player.
         print("=================================")
         for p in self.turn_order:
@@ -66,7 +80,15 @@ class Game():
                 break
         self.board.print()
 
-    def run(self, step=False):
+    def run(self, step: bool = False) -> list[bool]:
+        """ Executes full game with specified poilicy till completion
+
+        Args:
+            step (bool): await input at every hand cycle
+
+        Returns:
+            list[bool]: list of players, True if player has completed win column
+        """
         # Play till winner
         while not self.is_over:
             # Play a whole deck, 4-4-5

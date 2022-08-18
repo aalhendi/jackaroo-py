@@ -1,4 +1,5 @@
-from typing import List
+from __future__ import annotations
+from typing import Literal
 from ball import Ball
 
 
@@ -6,18 +7,34 @@ class Board():
     # TODO: Impl logger / visualizer
     def __init__(self, num_players: int) -> None:
         self.num_players = num_players
-        self.ROW_LEN = 19
-        self.WIN_COL_LEN = 4
-        self.len = num_players * self.ROW_LEN  # Fixed length per player
-        self.win_len = num_players * self.WIN_COL_LEN  # Fixed length per player
+        self.ROW_LEN: Literal[19] = 19
+        self.WIN_COL_LEN: Literal[4] = 4
+        self.len: int = num_players * self.ROW_LEN  # Fixed length per player
+        self.win_len: int = num_players * self.WIN_COL_LEN  # Fixed length per player
         # 4-player Board is a 76 element mask + 16 tiles for win columns
-        self.tiles = [0]*(self.len + self.win_len)
+        self.tiles: list[int | Ball] = [0]*(self.len + self.win_len)
 
     def is_occupied(self, idx: int) -> bool:
+        """Checks if given tile index is occupied
+
+        Args:
+            idx (int): tile index
+
+        Returns:
+            bool: True if occupied
+        """
         # Returns true if non-zero - aka ball present
         return bool(self.tiles[idx])
 
-    def query_ball_at_idx(self, idx: int) -> Ball:
+    def query_ball_at_idx(self, idx: int) -> Ball | int:
+        """ Returns value of tile at index=idx
+
+        Args:
+            idx (int): tile index
+
+        Returns:
+            Ball|int: Ball instance if value is ball else tile int value
+        """
         return self.tiles[idx]
 
     def print(self) -> None:
@@ -32,26 +49,57 @@ class Board():
         [print(tiles[i*self.ROW_LEN:(i+1)*self.ROW_LEN], '\t', winners[i *
                self.WIN_COL_LEN:(i+1)*self.WIN_COL_LEN]) for i in range(self.num_players)]
 
-    def update(self, idx, ball: Ball) -> None:
-        self.tiles[idx] = ball
+    def update(self, idx: int, value: Ball | int) -> None:
+        """ Updates tile value at index=idx
 
-    def get_balls(self):
-        balls = []
+        Args:
+            idx (int): tile index
+            value (Ball|int): value
+        """
+        self.tiles[idx] = value
+
+    def get_balls(self) -> list[Ball]:
+        """Returns all ball instances on board tiles (exculdes win columns)
+
+        Returns:
+            list[[Ball]: list of ball instances
+        """
+        balls: list[Ball] = []
         for tile in range(self.len):
             if self.is_occupied(tile):
                 ball = self.query_ball_at_idx(tile)
+                if not isinstance(ball, Ball):
+                    raise TypeError("Expected Ball type")
                 balls.append(ball)
         return balls
 
     def handle_collison(self, idx: int) -> None:
+        """ Jails ball at tile index=idx updating position and state
+
+        Args:
+            idx (int): tile index
+        """
         target_ball = self.query_ball_at_idx(idx)
+        if not isinstance(target_ball, Ball):
+            raise TypeError("Expected Ball type")
         # NOTE: Not needed. There for completion
         self.update(target_ball.position, 0)
         # TODO: Merge upadate position and update state. Have a jailbreak method etc.
         target_ball.upadate_position(-1)
         target_ball.update_state()
 
-    def calculate_move_path(self, ball: Ball, offset: int, team_number=None, is_five=False) -> List[int]:
+    def calculate_move_path(self, ball: Ball, offset: int, team_number:int|None=None, is_five:bool=False) -> list[int]:
+        """ Calculates move path for a given ball for a given offset
+
+        Args:
+            team_number (int?): optional team number
+            is_five (bool): optional if card_value was 5
+            ball (Ball): ball instance
+            offset (int): offset to move ball by
+
+        Returns:
+            list[int]: list of tile indicies
+        """
         can_enter_win = True  # By default all can enter winner col
         if is_five and team_number != ball.team_number:
             can_enter_win = False  # If 5 & not same team then cant enter

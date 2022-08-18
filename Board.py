@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Literal
-from ball import Ball
+from Ball import Ball
 
 
 class Board():

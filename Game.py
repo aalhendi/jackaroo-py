@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Any
 from Player import Player
-from deck import Deck
-from board import Board
+from Deck import Deck
+from Board import Board
 from collections import deque
 
 

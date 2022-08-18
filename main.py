@@ -1,4 +1,4 @@
-from game import Game
+from Game import Game
 
 game = Game(num_players=4)
 

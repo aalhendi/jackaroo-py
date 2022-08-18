@@ -5,7 +5,7 @@ import typing
 import json
 
 if typing.TYPE_CHECKING:
-    from board import Board  # NOTE: This avoids circular dependency
+    from Board import Board  # NOTE: This avoids circular dependency
 
 
 _Self = typing.TypeVar('_Self', bound='Ball')

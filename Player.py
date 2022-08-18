@@ -3,8 +3,8 @@ from copy import deepcopy
 import json
 import random
 from typing import Any, Deque, Literal
-from ball import Ball, States
-from board import Board
+from Ball import Ball, States
+from Board import Board
 from policies import random_policy
 from utils.actions import action_map
 from pprint import pformat

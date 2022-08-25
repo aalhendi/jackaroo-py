@@ -4,6 +4,7 @@ from Player import Player
 from Deck import Deck
 from Board import Board
 from collections import deque
+from utils.logger import logger
 
 
 class Game():
@@ -18,6 +19,7 @@ class Game():
         self.stack: list[dict[str, Any]] = []
         self.skip_next: bool = False
         self.is_over: bool = False
+        self.rounds_played: int = 0
 
     def create_players(self) -> list[Player]:
         """ Creates player instances
@@ -59,26 +61,25 @@ class Game():
 
     def process_hands(self) -> None:
         # TODO: Add human player: In place of decide_action, print the legal actions and await selection input from player.
-        print("=================================")
         for p in self.turn_order:
-            print(
-                f"Player Number: {self.players[p].number}", self.players[p].hand, sep='\n')
             if not self.skip_next:
                 self.players[p].get_actions()
                 self.players[p].check_legal_actions(self.board)
+                logger.info(self.players[p])
                 self.players[p].decide_action(policy="random")
                 action = self.players[p].play_action(self.board)
                 if action["verb"] == "BURN":
                     self.skip_next = True
             else:
+                logger.info(self.players[p])
                 action = self.players[p].burn()
                 self.skip_next = False
 
-            print(action)
+            logger.info(action)
             self.stack.append(action)
             if self.check_is_over():
                 break
-        self.board.print()
+        logger.info(self.board)
 
     def run(self, step: bool = False) -> list[bool]:
         """ Executes full game with specified poilicy till completion
@@ -101,8 +102,9 @@ class Game():
                     # Every player plays card
                     self.process_hands()
                     self.deck.decrement_hand_length()
-                    print(
-                        f"rounds left: {self.deck.rounds_remaining}, exp_hand: {self.deck.expected_hand_length}, turn_order {self.turn_order}")
+                    self.rounds_played += 1
+                    logger.info(
+                        f"rounds left: {self.deck.rounds_remaining}, exp_hand: {self.deck.expected_hand_length}, rounds_played: {self.rounds_played}")
                     if step:
                         input("Completed Hand Cycle\n")
         # Pass the deck, change the delaer

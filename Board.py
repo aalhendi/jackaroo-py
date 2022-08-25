@@ -37,7 +37,7 @@ class Board():
         """
         return self.tiles[idx]
 
-    def print(self) -> None:
+    def __repr__(self) -> None:
         winners = self.tiles[-self.win_len:]
         tiles = self.tiles[:-self.win_len]
         for idx, tile in enumerate(tiles):
@@ -46,8 +46,11 @@ class Board():
         for idx, tile in enumerate(winners):
             if isinstance(tile, Ball):
                 winners[idx] = tile.owner
-        [print(tiles[i*self.ROW_LEN:(i+1)*self.ROW_LEN], '\t', winners[i *
-               self.WIN_COL_LEN:(i+1)*self.WIN_COL_LEN]) for i in range(self.num_players)]
+        str_self = "\n".join(
+            str(tiles[i*self.ROW_LEN:(i+1)*self.ROW_LEN]) + '\t' +
+            str(winners[i * self.WIN_COL_LEN:(i+1)*self.WIN_COL_LEN])
+            for i in range(self.num_players))
+        return str_self
 
     def update(self, idx: int, value: Ball | int) -> None:
         """ Updates tile value at index=idx
@@ -88,7 +91,7 @@ class Board():
         target_ball.upadate_position(-1)
         target_ball.update_state()
 
-    def calculate_move_path(self, ball: Ball, offset: int, team_number:int|None=None, is_five:bool=False) -> list[int]:
+    def calculate_move_path(self, ball: Ball, offset: int, team_number: int | None = None, is_five: bool = False) -> list[int]:
         """ Calculates move path for a given ball for a given offset
 
         Args:

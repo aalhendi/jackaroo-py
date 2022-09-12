@@ -1,0 +1,6 @@
+name: jackaroo
+channels:
+  - defaults
+dependencies:
+  - python=3.9.13=haa1d7c7_1
+prefix: /home/aalhendi/miniconda3/envs/jackaroo

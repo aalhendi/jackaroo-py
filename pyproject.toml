@@ -1,0 +1,59 @@
+[tool.poetry]
+name = "jackaroo"
+version = "0.1.0"
+description = ""
+authors = ["aalhendi <abdulrazaq.alhendi@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9.12"
+numpy = "1.21"
+pydantic = "^1.9.2"
+tqdm = "^4.64.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.1.1"
+black = "^22.3.0"
+mypy = "^0.961"
+pycln = "^2.0.1"
+isort = "^5.10.1"
+pre-commit = "^2.19.0"
+pre-commit-hooks = "^4.3.0"
+jupyter = "^1.0.0"
+ipykernel = "^6.15.1"
+
+[tool.mypy]
+files = ["Jackaroo/"]
+pretty = true
+strict = true
+warn_return_any = True
+warn_unused_configs = True
+show_error_codes = true
+ignore_missing_imports = true
+exclude = "(/tests/)|(/docs/)|(/examples/)"
+
+[tool.pytest.ini_options]
+# log_cli = true
+addopts = [
+    # show summary of all tests that did not pass
+    "-ra",
+    # idk
+    "-s",
+    # Make tracebacks shorter
+    "--tb=native",
+    # enable all warnings
+    # "-Wd",
+]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.black]
+line-length = 79 # override the default of 88
+
+[build-system]
+requires = ["poetry>=1.1.6"]
+build-backend = "poetry.masonry.api"

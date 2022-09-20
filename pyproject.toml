@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["aalhendi <abdulrazaq.alhendi@gmail.com>"]
 license = "MIT"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.9.12"
@@ -26,8 +27,8 @@ ipykernel = "^6.15.1"
 files = ["Jackaroo/"]
 pretty = true
 strict = true
-warn_return_any = True
-warn_unused_configs = True
+warn_return_any = true
+warn_unused_configs = true
 show_error_codes = true
 ignore_missing_imports = true
 exclude = "(/tests/)|(/docs/)|(/examples/)"

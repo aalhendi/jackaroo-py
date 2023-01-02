@@ -1,10 +1,10 @@
-import Game
+from jackaroo.Game import Game
 import sys
 import os.path
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 
-game = Game.Game(num_players=4)
+game = Game(num_players=4)
 
 
 def test_deck_length():

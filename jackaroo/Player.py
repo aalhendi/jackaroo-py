@@ -38,7 +38,7 @@ class Player():
         """
         self.turn_order = turn_order
 
-    def set_teammate_balls(self, balls: list[Ball])->None:
+    def set_teammate_balls(self, balls: list[Ball]) -> None:
         """Sets the teammate_balls property
 
         Args:
@@ -46,7 +46,7 @@ class Player():
         """
         self.teammate_balls = balls
 
-    def update_hand(self, new_hand: list[int])->None:
+    def update_hand(self, new_hand: list[int]) -> None:
         """Updates the hand property
 
         Args:
@@ -215,8 +215,9 @@ class Player():
             elif verb == "JAILBREAK":
                 for ball_idx, ball in enumerate(balls):
                     if ball.can_jailbreak():
-                        action.update({"ball_idx": ball_idx})
-                        legal_actions.append(action)
+                        new_action = deepcopy(action)
+                        new_action.update({"ball_idx": ball_idx})
+                        legal_actions.append(new_action)
 
             elif verb == 'BURN':
                 can_burn = self.can_burn()

@@ -8,7 +8,7 @@ from utils.logger import logger
 
 
 class Game():
-    def __init__(self, num_players: int = 4) -> None:
+    def __init__(self, num_players: int, policies:list[str]) -> None:
         self.num_players = num_players
         self.num_teams = self.num_players//2
         self.board = Board(self.num_players)
@@ -20,6 +20,7 @@ class Game():
         self.skip_next: bool = False
         self.is_over: bool = False
         self.rounds_played: int = 0
+        self.policies = policies
 
     def create_players(self) -> list[Player]:
         """ Creates player instances
@@ -65,21 +66,21 @@ class Game():
             if not self.skip_next:
                 self.players[p].get_actions()
                 self.players[p].check_legal_actions(self.board)
-                logger.info(self.players[p])
-                self.players[p].decide_action(policy="random")
+#                logger.info(self.players[p])
+                self.players[p].decide_action(self.board, policy=self.policies[p])
                 action = self.players[p].play_action(self.board)
                 if action["verb"] == "BURN":
                     self.skip_next = True
             else:
-                logger.info(self.players[p])
+#                logger.info(self.players[p])
                 action = self.players[p].burn()
                 self.skip_next = False
 
-            logger.info(action)
+#            logger.info(action)
             self.stack.append(action)
             if self.check_is_over():
                 break
-        logger.info(self.board)
+#        logger.info(self.board)
 
     def run(self, step: bool = False) -> list[bool]:
         """ Executes full game with specified poilicy till completion
@@ -103,8 +104,8 @@ class Game():
                     self.process_hands()
                     self.deck.decrement_hand_length()
                     self.rounds_played += 1
-                    logger.info(
-                        f"rounds left: {self.deck.rounds_remaining}, exp_hand: {self.deck.expected_hand_length}, rounds_played: {self.rounds_played}")
+#                    logger.info(
+#                        f"rounds left: {self.deck.rounds_remaining}, exp_hand: {self.deck.expected_hand_length}, rounds_played: {self.rounds_played}")
                     if step:
                         input("Completed Hand Cycle\n")
         # Pass the deck, change the delaer

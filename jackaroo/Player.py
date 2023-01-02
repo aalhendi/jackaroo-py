@@ -5,7 +5,7 @@ import random
 from typing import Any, Deque, Literal
 from Ball import Ball, States
 from Board import Board
-from policies import random_policy
+from policies import jailbrak_pacifict, random_policy
 from utils.actions import action_map
 from pprint import pformat
 
@@ -76,7 +76,7 @@ class Player():
         self.hand.pop(self.hand.index(card_value))
         return
 
-    def decide_action(self, policy: str = "random") -> None:
+    def decide_action(self, board:Board, policy: str) -> None:
         """Decides action from actions property
 
         Args:
@@ -84,9 +84,9 @@ class Player():
         """
         action: dict[str, Any]
         if policy == "random":
-            action = random_policy(self.actions, self.hand)
-        # elif policy == "homemade":
-        #     action = homemade_heuristic(self.actions, self.hand)
+            action = random_policy(self)
+        elif policy == "jailbreak_pacifist":
+            action = jailbrak_pacifict(self, board)
         else:
             raise NotImplementedError("Policy not implemented:", policy)
         self.current_action = action
